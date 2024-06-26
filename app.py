@@ -10,7 +10,7 @@ df = pd.read_csv("sensor_readings.csv")
 
 df["Timestamp"] = pd.to_datetime(df["Timestamp"])
 
-print(df)
+#print(df)
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
@@ -42,7 +42,7 @@ def update_graph(date_range, relayout_data):
     filtered_df = df[(df["Timestamp"] >= start_date) & (df["Timestamp"] <= end_date)]
 
     # Debugging statement to check filtered data
-    print(f"Filtered Data: {filtered_df.head()}")
+    #print(f"Filtered Data: {filtered_df.head()}")
     print(f"Filtered Data Length: {len(filtered_df)}")
 
     # Check if there are any data points after filtering
@@ -68,6 +68,7 @@ def update_graph(date_range, relayout_data):
 
     # Downsample the data to avoid performance issues
     zooming = relayout_data is not None and 'xaxis.range[0]' in relayout_data
+    print(relayout_data)
 
     # If zooming or selecting, update the date range
     if zooming:
@@ -78,9 +79,9 @@ def update_graph(date_range, relayout_data):
     time_range = end_date - start_date
     if time_range > pd.Timedelta(minutes=7):
         step = 1000
-    elif time_range > pd.Timedelta(minutes=3):
+    elif time_range < pd.Timedelta(minutes=3):
         step = 100
-    elif time_range > pd.Timedelta(minutes=1):
+    elif time_range < pd.Timedelta(minutes=1):
         step = 10
     else:
         step = 1
@@ -88,7 +89,7 @@ def update_graph(date_range, relayout_data):
     downsampled_df = filtered_df.iloc[::step, :]
 
     # Debugging statement to check downsampled data
-    print(f"Downsampled Data: {downsampled_df.head()}")
+    #print(f"Downsampled Data: {downsampled_df.head()}")
     print(f"Downsampled Data Length: {len(downsampled_df)}")
 
     figure = {
