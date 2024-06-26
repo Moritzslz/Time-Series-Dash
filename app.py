@@ -4,7 +4,6 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import pandas as pd
-import numpy as np
 import plotly.graph_objs as go
 from dotenv import load_dotenv
 
@@ -13,8 +12,6 @@ df = pd.read_csv("sensor_readings.csv")
 
 df["Timestamp"] = pd.to_datetime(df["Timestamp"])
 
-#print(df)
-
 # Initialize the Dash app
 app = dash.Dash(__name__)
 
@@ -22,29 +19,24 @@ app.layout = html.Div([
     dcc.Graph(
         id="time-series-plot",
         config={'scrollZoom': True, 'displayModeBar': True}
-    ),
-    dcc.RangeSlider(
-        id='date-range-slider',
-        min=df['Timestamp'].min().timestamp(),
-        max=df['Timestamp'].max().timestamp(),
-        value=[df['Timestamp'].min().timestamp(), df['Timestamp'].max().timestamp()],
-        marks={t.timestamp(): t.strftime('%Y-%m-%d') for t in pd.date_range(df['Timestamp'].min(), df['Timestamp'].max(), freq='1ME')}
     )
 ])
 
 @app.callback(
     Output("time-series-plot", "figure"),
-    [Input("date-range-slider", "value"),
-     Input("time-series-plot", "relayoutData")]
+    [Input("time-series-plot", "relayoutData")]
 )
-def update_graph(date_range, relayout_data):
-    start_date = pd.to_datetime(date_range[0], unit='s')
-    end_date = pd.to_datetime(date_range[1], unit='s')
+def update_graph(relayout_data):
+    if "xaxis.range[0]" in relayout_data:
+        start_time = pd.to_datetime(relayout_data['xaxis.range[0]'])
+        end_time = pd.to_datetime(relayout_data['xaxis.range[1]'])
+    else:
+        start_time = pd.to_datetime(df["Timestamp"].min())
+        end_time = pd.to_datetime(df["Timestamp"].max())
 
-    filtered_df = df[(df["Timestamp"] >= start_date) & (df["Timestamp"] <= end_date)]
+    filtered_df = df[(df["Timestamp"] >= start_time) & (df["Timestamp"] <= end_time)]
 
     # Debugging statement to check filtered data
-    #print(f"Filtered Data: {filtered_df.head()}")
     print(f"Filtered Data Length: {len(filtered_df)}")
 
     # Check if there are any data points after filtering
@@ -68,30 +60,11 @@ def update_graph(date_range, relayout_data):
     # Set the 'Timestamp' column as the index
     filtered_df.set_index("Timestamp", inplace=True)
 
-    # Downsample the data to avoid performance issues
-    zooming = relayout_data is not None and 'xaxis.range[0]' in relayout_data
-    print(relayout_data)
-
-    # If zooming or selecting, update the date range
-    if zooming:
-        start_date = pd.to_datetime(relayout_data['xaxis.range[0]'])
-        end_date = pd.to_datetime(relayout_data['xaxis.range[1]'])
-
-    # Determine the appropriate resampling frequency based on the selected time range
-    time_range = end_date - start_date
-    if time_range > pd.Timedelta(minutes=7):
-        step = 1000
-    elif time_range < pd.Timedelta(minutes=3):
-        step = 100
-    elif time_range < pd.Timedelta(minutes=1):
-        step = 10
-    else:
-        step = 1
+    step = calculate_step(start_time, end_time)
 
     downsampled_df = filtered_df.iloc[::step, :]
 
     # Debugging statement to check downsampled data
-    #print(f"Downsampled Data: {downsampled_df.head()}")
     print(f"Downsampled Data Length: {len(downsampled_df)}")
 
     figure = {
@@ -110,6 +83,25 @@ def update_graph(date_range, relayout_data):
         )
     }
     return figure
+
+
+def calculate_step(start_time, end_time):
+    time_range = end_time - start_time
+
+    if time_range >= pd.Timedelta(minutes=7):
+        step = 500  # Show data every 500 milliseconds
+    elif time_range >= pd.Timedelta(minutes=5):
+        step = 250  # Show data every 250 milliseconds
+    elif time_range >= pd.Timedelta(minutes=3):
+        step = 100  # Show data every 100 milliseconds
+    elif time_range >= pd.Timedelta(minutes=1):
+        step = 50  # Show data every 50 milliseconds
+    elif time_range >= pd.Timedelta(seconds=30):
+        step = 10  # Show data every 10 milliseconds
+    else:
+        step = 1  # Show data every 1 millisecond
+
+    return step
 
 if __name__ == "__main__":
     load_dotenv()
