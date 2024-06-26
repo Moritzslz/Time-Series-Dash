@@ -1,9 +1,12 @@
+import os
+
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
 import pandas as pd
 import numpy as np
 import plotly.graph_objs as go
+from dotenv import load_dotenv
 
 # Reading the sample data
 df = pd.read_csv("sensor_readings.csv")
@@ -110,4 +113,6 @@ def update_graph(date_range, relayout_data):
     return figure
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    load_dotenv()
+    port = int(os.environ.get("PORT", 8000))
+    app.run_server(debug=False, port=port, host="0.0.0.0")

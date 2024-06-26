@@ -1,11 +1,15 @@
-FROM python
+FROM python:3.12
+
 LABEL authors="moritzslz"
 
-WORKDIR /Users/moritzslz/PycharmProjects/Time-Series-Dash
+WORKDIR /app
 
-COPY requirements.txt ./
+COPY . /app
+
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+EXPOSE 8000
 
-ENTRYPOINT ["top", "-b"]
+ENV NAME TimeSeriesDashApp
+
+CMD ["python", "app.py"]

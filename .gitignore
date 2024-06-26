@@ -1,2 +1,12 @@
 # .gitignore
-.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+*.pyo
+*.pyd
+*.swp
+*.swo
+*.egg-info/
+*.eggs/
+env/
