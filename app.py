@@ -32,7 +32,6 @@ app.layout = html.Div([
     )
 ])
 
-
 @app.callback(
     Output("time-series-plot", "figure"),
     [Input("date-range-slider", "value"),
